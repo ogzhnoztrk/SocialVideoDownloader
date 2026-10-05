@@ -1,8 +1,47 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿<div id="tool-banner" class="tool-banner d-none"></div>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="panel">
+    <div class="section-label">Video URL</div>
+    <label class="visually-hidden" for="video-url">Video URL</label>
+    <input id="video-url" class="url-input" type="url" placeholder="https://www.instagram.com/reel/..." autocomplete="off" />
+    <div class="action-row">
+        <button id="info-button" class="btn btn-accent" type="button">Video Bilgisini Getir</button>
+    </div>
+</section>
+
+<section id="info-panel" class="panel d-none">
+    <div class="info-grid">
+        <img id="info-thumb" class="thumb d-none" alt="Video önizlemesi" />
+        <div class="info-copy">
+            <div class="meta-line"><span>Platform</span><strong id="info-platform"></strong></div>
+            <div class="meta-line"><span>Başlık</span><strong id="info-title"></strong></div>
+            <div class="meta-line"><span>Kullanıcı</span><strong id="info-uploader"></strong></div>
+            <div class="meta-line"><span>Süre</span><strong id="info-duration"></strong></div>
+            <div class="meta-line"><span>Çözünürlük</span><strong id="info-resolution"></strong></div>
+            <div class="meta-line"><span>Format</span><strong id="info-format"></strong></div>
+        </div>
+    </div>
+    <div class="folder-row">
+        <div>
+            <div class="section-label">İndirme Klasörü</div>
+            <div id="info-folder" class="folder-path"></div>
+        </div>
+        <div class="action-row">
+            <button id="change-folder" class="btn btn-ghost" type="button">Klasörü Değiştir</button>
+            <button id="download-button" class="btn btn-accent" type="button">İndir</button>
+        </div>
+    </div>
+</section>
+
+<section class="stats" id="stats"></section>
+
+<section class="panel">
+    <div class="section-heading">
+        <h2>Son İndirmeler</h2>
+    </div>
+    <div id="recent-list" class="download-list"></div>
+</section>
+
+@section Scripts {
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}
