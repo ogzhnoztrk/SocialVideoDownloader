@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="SocialVideoDownloader.Core/SocialVideoDownloader.Core.csproj" />
+  <Project Path="SocialVideoDownloader.Infrastructure/SocialVideoDownloader.Infrastructure.csproj" />
+  <Project Path="SocialVideoDownloader.Tests/SocialVideoDownloader.Tests.csproj" />
+  <Project Path="SocialVideoDownloader.Tray/SocialVideoDownloader.Tray.csproj" />
+  <Project Path="SocialVideoDownloader.Web/SocialVideoDownloader.Web.csproj" />
+</Solution>

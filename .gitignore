@@ -1,0 +1,11 @@
+bin/
+obj/
+/dist/
+.tools/
+.vs/
+*.user
+*.db
+*.db-*
+*.log
+appsettings.*.local.json
+host-settings.json
