@@ -13,6 +13,7 @@ async function loadSettings() {
     document.querySelector("#ytdlp-path").value = settings.ytDlpPath || "";
     document.querySelector("#ffmpeg-path").value = settings.ffmpegPath || "";
     document.querySelector("#auto-update").checked = settings.autoUpdateBinaries;
+    document.querySelector("#listen-address").value = settings.listenAddress || "127.0.0.1";
     document.querySelector("#web-port").value = settings.webPort;
     document.querySelector("#open-on-startup").checked = settings.openWebOnStartup;
     document.querySelector("#start-with-windows").checked = settings.startWithWindows;
@@ -73,6 +74,8 @@ document.querySelector("#restart-service").addEventListener("click", async () =>
 });
 document.querySelector("#open-root").addEventListener("click", async () => {
     try {
+        const path = document.querySelector("#download-directory").value.trim();
+        if (await openLocal(path, false)) return;
         await api("/api/system/open-download-folder", { method: "POST" });
     } catch (error) {
         notifyError(error);
@@ -88,6 +91,7 @@ function readForm() {
         ytDlpPath: document.querySelector("#ytdlp-path").value.trim(),
         ffmpegPath: document.querySelector("#ffmpeg-path").value.trim(),
         autoUpdateBinaries: document.querySelector("#auto-update").checked,
+        listenAddress: document.querySelector("#listen-address").value.trim(),
         webPort: Number(document.querySelector("#web-port").value),
         openWebOnStartup: document.querySelector("#open-on-startup").checked,
         startWithWindows: document.querySelector("#start-with-windows").checked,

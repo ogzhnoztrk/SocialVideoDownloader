@@ -23,18 +23,28 @@ C:\ProgramData\SocialVideoDownloader\Logs
 2. Günlük kullanım (en kolay yol)
 ---------------------------------
 
-PowerShell veya Terminal açın ve şu komutları çalıştırın:
+Proje klasöründeki Baslat.cmd dosyasına çift tıklayın.
+Bu tek adım hem web panelini hem tepsi uygulamasını açar.
 
-    cd C:\Users\PC\source\SocialVideoDownloader
-    dotnet run --project SocialVideoDownloader.Web
+Git Bash kullanıyorsanız aynı klasörde:
 
-"Now listening on: http://localhost:5180" yazısını gördükten sonra
-tarayıcıda şu adresi açın:
+    ./baslat.sh
+
+Tarayıcı adresi:
 
     http://localhost:5180
 
-Bu pencereyi kapatmayın. Kapatırsanız web paneli de kapanır.
-Durdurmak için o pencerede Ctrl+C yapın.
+Ayarlar sayfasındaki Yerel IP ve Port, IIS site bağlaması gibidir.
+Varsayılan 127.0.0.1 ve 5180'dır. Bu bilgisayarın yerel ağ IP'sini
+yazarsanız panele http://O-IP:port adresinden de girilir.
+Değişiklik, program yeniden başlatılınca uygulanır.
+Başka telefon veya bilgisayarlardan erişim açılmaz.
+
+Bu bilgisayarda web paneli Windows hizmeti olarak da kayıtlı.
+Hizmet çalışıyorsa Baslat.cmd yalnızca tepsi simgesini açar;
+panel arka planda açık kalır. Hizmet kapalıysa Baslat.cmd
+hem web penceresini hem tepsiyi başlatır. Web penceresini
+kapatırsanız o oturumdaki panel de kapanır.
 
 
 3. İlk açılışta ayarlar
@@ -71,14 +81,23 @@ Saat yanındaki tepsi simgesine sağ tıklayınca menü çıkar:
 Çıkış yalnızca tepsi simgesini kapatır. Web programı kendi penceresinde
 çalışmaya devam eder.
 
-Tepsi, web programı kapalıyken kırmızı / durmuş görünebilir.
-Önce Web projesini başlatın.
+Tepsi, web programı kapalıyken yaklaşık iki saniye bekler ve
+web'i kendisi başlatmayı dener. Baslat.cmd kullanıyorsanız
+web zaten açıldığı için tepsi ikinci bir kopya başlatmaz.
 
 
 5. Bilgisayar açılınca kendi kendine çalışsın
 ----------------------------------------------
 
-Bunu bir kez yapmanız yeter. Yönetici PowerShell gerekir.
+Web hizmeti bu bilgisayarda otomatik başlayacak şekilde kayıtlıdır.
+Bilgisayar açılınca panel arka planda gelir.
+
+Tepsi için Ayarlar sayfasında "Windows ile başlat" kutusunu
+işaretleyip Kaydet'e basın. Oturum açılınca Baslat.cmd çalışır.
+Hizmet ayaktaysa yalnızca tepsi açılır; hizmet kapalıysa web ve
+tepsi birlikte açılır.
+
+İsterseniz Windows hizmeti olarak da kurabilirsiniz. Yönetici PowerShell gerekir.
 
     cd C:\Users\PC\source\SocialVideoDownloader
     powershell -ExecutionPolicy Bypass -File .\scripts\publish.ps1

@@ -25,6 +25,22 @@ public class SafetyTests
     }
 
     [Theory]
+    [InlineData("127.0.0.1", "127.0.0.1")]
+    [InlineData("localhost", "127.0.0.1")]
+    [InlineData(" 127.0.0.1 ", "127.0.0.1")]
+    public void Listen_address_accepts_loopback(string input, string expected) =>
+        Assert.Equal(expected, ListenAddressGuard.Normalize(input));
+
+    [Theory]
+    [InlineData("not-an-ip")]
+    [InlineData("0.0.0.0")]
+    [InlineData("::1")]
+    public void Listen_address_rejects_non_local_values(string input)
+    {
+        Assert.Throws<Core.Exceptions.DownloadException>(() => ListenAddressGuard.Normalize(input));
+    }
+
+    [Theory]
     [InlineData("https://www.instagram.com/reel/abc/")]
     [InlineData("http://example.com/watch")]
     public void Url_guard_accepts_public_http_urls(string url) =>

@@ -40,8 +40,8 @@ function statusCell(job) {
 function actionCell(job) {
     const cell = document.createElement("td");
     const actions = el("div", "history-actions");
-    if (job.canOpenFile) actions.append(actionButton("Dosyayı Aç", () => api(`/api/downloads/${job.id}/open-file`, { method: "POST" })));
-    actions.append(actionButton("Klasörü Aç", () => api(`/api/downloads/${job.id}/open-folder`, { method: "POST" })));
+    if (job.canOpenFile) actions.append(actionButton("Dosyayı Aç", () => openJobFile(job)));
+    actions.append(actionButton("Klasörü Aç", () => openJobFolder(job)));
     actions.append(actionButton("URL'yi Aç", () => window.open(job.url, "_blank", "noopener")));
     actions.append(actionButton("Tekrar İndir", () => api(`/api/downloads/${job.id}/retry`, { method: "POST" }).then(loadHistory)));
     actions.append(actionButton("Sil", () => removeJob(job.id)));
@@ -60,6 +60,17 @@ function actionButton(label, handler) {
         }
     });
     return button;
+}
+
+async function openJobFile(job) {
+    if (await openLocal(job.filePath, true)) return;
+    await api(`/api/downloads/${job.id}/open-file`, { method: "POST" });
+}
+
+async function openJobFolder(job) {
+    const folder = job.filePath ? parentDirectory(job.filePath) : job.outputDirectory;
+    if (await openLocal(folder, false)) return;
+    await api(`/api/downloads/${job.id}/open-folder`, { method: "POST" });
 }
 
 async function removeJob(id) {
