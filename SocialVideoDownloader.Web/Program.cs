@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -23,8 +24,7 @@ Log.Logger = new LoggerConfiguration()
         (date, writeTo) => writeTo.File(
             Path.Combine(DataPaths.LogsDirectory, $"app-{date}.log"),
             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
-            shared: true),
-        sinkMapCountLimit: 2)
+            shared: true))
     .CreateLogger();
 
 try

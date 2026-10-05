@@ -87,8 +87,8 @@ public class DownloadFlowTests : IDisposable
             OutputDirectory = _root,
             FilePath = file,
             Status = DownloadStatus.Completed,
-            CreatedAt = DateTimeOffset.UtcNow,
-            CompletedAt = DateTimeOffset.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            CompletedAt = DateTime.UtcNow,
         });
         db.ApplicationSettings.Add(new ApplicationSettings
         {
