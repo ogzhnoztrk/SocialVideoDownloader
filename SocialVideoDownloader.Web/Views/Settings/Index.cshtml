@@ -28,6 +28,9 @@
 
     <section class="panel">
         <h2>Web</h2>
+        <label for="listen-address">Yerel IP</label>
+        <input id="listen-address" placeholder="127.0.0.1" required />
+        <p class="hint">IIS site bağlaması gibi çalışır. 127.0.0.1 yalnızca bu bilgisayardır. Bu makinenin yerel ağ IP'sini yazarsanız panele http://IP:port adresinden de ulaşırsınız. Başka cihazlara açılmaz.</p>
         <label for="web-port">Port</label>
         <input id="web-port" type="number" min="1024" max="65535" required />
         <label class="check"><input id="open-on-startup" type="checkbox" /> Web arayüzünü açılışta aç</label>
@@ -42,7 +45,7 @@
             <button id="restart-service" class="btn btn-ghost" type="button">Servisi Yeniden Başlat</button>
             <button id="open-root" class="btn btn-ghost" type="button">İndirme Klasörünü Aç</button>
         </div>
-        <p class="hint">Servis kurulumu yayınlanmış uygulamada yönetici onayı ister. Günlük çalıştırma için tepsi uygulamasını açın.</p>
+        <p class="hint">Web ve tepsiyi birlikte açmak için proje klasöründeki Baslat.cmd dosyasına çift tıklayın. Windows ile başlat işaretliyken oturum açılınca ikisi de açılır. IP veya port değişince programı yeniden başlatın.</p>
     </section>
 
     <div class="action-row">

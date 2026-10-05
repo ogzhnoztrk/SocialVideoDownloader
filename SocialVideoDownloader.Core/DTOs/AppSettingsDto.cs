@@ -1,3 +1,5 @@
+using SocialVideoDownloader.Core.Constants;
+
 namespace SocialVideoDownloader.Core.DTOs;
 
 public sealed class AppSettingsDto
@@ -15,6 +17,8 @@ public sealed class AppSettingsDto
     public string? FfmpegPath { get; set; }
 
     public bool AutoUpdateBinaries { get; set; }
+
+    public string ListenAddress { get; set; } = AppConstants.DefaultListenAddress;
 
     public int WebPort { get; set; }
 

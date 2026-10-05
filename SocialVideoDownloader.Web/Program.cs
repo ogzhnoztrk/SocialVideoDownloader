@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -9,8 +10,29 @@ using SocialVideoDownloader.Infrastructure.Configuration;
 using SocialVideoDownloader.Infrastructure.Data;
 using SocialVideoDownloader.Web.Middleware;
 
-var builder = WebApplication.CreateBuilder(args);
-var port = HostSettingsStore.ReadPort(builder.Configuration.GetValue("Downloader:WebPort", AppConstants.DefaultPort));
+using var webMutex = new Mutex(false, @"Local\SocialVideoDownloader.WebHost");
+var ownsWebHost = false;
+try
+{
+    ownsWebHost = webMutex.WaitOne(0);
+}
+catch (AbandonedMutexException)
+{
+    ownsWebHost = true;
+}
+
+if (!ownsWebHost)
+    return;
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory
+});
+builder.WebHost.UseStaticWebAssets();
+var hostSettings = HostSettingsStore.Read(builder.Configuration.GetValue("Downloader:WebPort", AppConstants.DefaultPort));
+var port = hostSettings.Port;
+var listenAddress = hostSettings.ListenAddress;
 Directory.CreateDirectory(DataPaths.LogsDirectory);
 
 Log.Logger = new LoggerConfiguration()
@@ -31,7 +53,13 @@ try
 {
     builder.Host.UseSerilog();
     builder.Services.AddWindowsService(options => options.ServiceName = AppConstants.ServiceName);
-    builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(port));
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenLocalhost(port);
+        if (!listenAddress.Equals(AppConstants.DefaultListenAddress, StringComparison.Ordinal) &&
+            IPAddress.TryParse(listenAddress, out var address))
+            options.Listen(address, port);
+    });
     builder.Services.AddSocialVideoDownloader(builder.Configuration);
     builder.Services.AddControllersWithViews().AddJsonOptions(options =>
     {
@@ -39,7 +67,9 @@ try
     });
 
     var app = builder.Build();
-    app.Services.GetRequiredService<ActiveEndpoint>().Port = port;
+    var activeEndpoint = app.Services.GetRequiredService<ActiveEndpoint>();
+    activeEndpoint.Port = port;
+    activeEndpoint.ListenAddress = listenAddress;
 
     await using (var scope = app.Services.CreateAsyncScope())
     {
@@ -81,4 +111,6 @@ catch (Exception exception)
 finally
 {
     Log.CloseAndFlush();
+    if (ownsWebHost)
+        webMutex.ReleaseMutex();
 }

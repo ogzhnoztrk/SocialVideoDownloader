@@ -63,6 +63,30 @@ function el(tag, className, text) {
     return node;
 }
 
+function parentDirectory(path) {
+    if (!path) return "";
+    const index = Math.max(path.lastIndexOf("\\"), path.lastIndexOf("/"));
+    return index > 0 ? path.slice(0, index) : path;
+}
+
+async function openLocal(path, select) {
+    if (!path) throw new Error("Klasör bulunamadı.");
+    try {
+        const response = await fetch("http://127.0.0.1:5181/open-path", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path, select: !!select }),
+        });
+        if (response.ok) return true;
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 404) return false;
+        throw new Error(data.message || "Klasör açılamadı.");
+    } catch (error) {
+        if (error instanceof TypeError) return false;
+        throw error;
+    }
+}
+
 async function browseFolder() {
     try {
         const response = await fetch("http://127.0.0.1:5181/browse-folder", { method: "POST" });

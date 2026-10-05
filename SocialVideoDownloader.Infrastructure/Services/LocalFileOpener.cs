@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using SocialVideoDownloader.Core.Constants;
 using SocialVideoDownloader.Core.Exceptions;
 using SocialVideoDownloader.Core.Validation;
 
@@ -25,15 +23,5 @@ public static class LocalFileOpener
         StartExplorer(full);
     }
 
-    private static void StartExplorer(string argument)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "explorer.exe",
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-        startInfo.ArgumentList.Add(argument);
-        Process.Start(startInfo);
-    }
+    private static void StartExplorer(string argument) => InteractiveExplorer.Start(argument);
 }

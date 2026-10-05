@@ -64,31 +64,46 @@ public static class DataPaths
 
 public static class HostSettingsStore
 {
-    public static int ReadPort(int fallback)
+    public static HostEndpoint Read(int fallbackPort)
     {
+        var port = NormalizePort(fallbackPort);
+        var address = Core.Constants.AppConstants.DefaultListenAddress;
         try
         {
             if (!File.Exists(DataPaths.HostSettingsPath))
-                return Normalize(fallback);
+                return new HostEndpoint(address, port);
 
             using var document = JsonDocument.Parse(File.ReadAllText(DataPaths.HostSettingsPath));
-            if (document.RootElement.TryGetProperty("webPort", out var port) && port.TryGetInt32(out var value))
-                return Normalize(value);
+            var root = document.RootElement;
+            if (root.TryGetProperty("webPort", out var portValue) && portValue.TryGetInt32(out var storedPort))
+                port = NormalizePort(storedPort);
+            if (root.TryGetProperty("listenAddress", out var addressValue))
+            {
+                var text = addressValue.GetString();
+                if (!string.IsNullOrWhiteSpace(text))
+                    address = text.Trim();
+            }
         }
         catch (Exception exception) when (exception is IOException or JsonException or UnauthorizedAccessException)
         {
-            return Normalize(fallback);
+            return new HostEndpoint(Core.Constants.AppConstants.DefaultListenAddress, NormalizePort(fallbackPort));
         }
 
-        return Normalize(fallback);
+        return new HostEndpoint(address, port);
     }
 
-    public static void WritePort(int port)
+    public static void Write(string listenAddress, int port)
     {
         Directory.CreateDirectory(DataPaths.Root);
-        var json = JsonSerializer.Serialize(new { webPort = Normalize(port) });
+        var json = JsonSerializer.Serialize(new
+        {
+            listenAddress,
+            webPort = NormalizePort(port),
+        });
         File.WriteAllText(DataPaths.HostSettingsPath, json);
     }
 
-    private static int Normalize(int port) => port is >= 1024 and <= 65535 ? port : Core.Constants.AppConstants.DefaultPort;
+    private static int NormalizePort(int port) => port is >= 1024 and <= 65535 ? port : Core.Constants.AppConstants.DefaultPort;
 }
+
+public sealed record HostEndpoint(string ListenAddress, int Port);

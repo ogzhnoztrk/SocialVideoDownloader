@@ -22,7 +22,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         try
         {
-            _helper = new TrayHelperServer(BrowseFolder, RestartService);
+            _helper = new TrayHelperServer(BrowseFolder, RestartService, OpenPath);
         }
         catch (Exception)
         {
@@ -51,7 +51,119 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _icon.DoubleClick += (_, _) => OpenWeb();
         _timer.Tick += async (_, _) => await RefreshAsync();
         _timer.Start();
-        _ = RefreshAsync();
+        _port = ReadConfiguredPort();
+        _ = StartAsync();
+    }
+
+    private static int ReadConfiguredPort()
+    {
+        try
+        {
+            var path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "SocialVideoDownloader",
+                "host-settings.json");
+            if (!File.Exists(path))
+                return AppConstants.DefaultPort;
+
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            if (document.RootElement.TryGetProperty("webPort", out var port) &&
+                port.TryGetInt32(out var value) &&
+                value is >= 1024 and <= 65535)
+                return value;
+        }
+        catch (Exception)
+        {
+        }
+
+        return AppConstants.DefaultPort;
+    }
+
+    private async Task StartAsync()
+    {
+        try
+        {
+            if (!await IsWebReachableAsync())
+            {
+                var startedWeb = false;
+                for (var attempt = 0; attempt < 30 && !await IsWebReachableAsync(); attempt++)
+                {
+                    if (!startedWeb && attempt == 4 && !WebLaunchAlreadyRequested())
+                    {
+                        StartWebProcess();
+                        startedWeb = true;
+                    }
+
+                    await Task.Delay(500);
+                }
+            }
+        }
+        catch (Exception)
+        {
+        }
+
+        await RefreshAsync();
+    }
+
+    private async Task<bool> IsWebReachableAsync()
+    {
+        try
+        {
+            using var response = await _http.GetAsync($"http://127.0.0.1:{_port}/api/status");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static bool WebLaunchAlreadyRequested() =>
+        string.Equals(Environment.GetEnvironmentVariable("SVD_WEB_LAUNCHED"), "1", StringComparison.Ordinal) ||
+        Process.GetProcessesByName("SocialVideoDownloader.Web").Length > 0;
+
+    private static void StartWebProcess()
+    {
+        var beside = Path.Combine(AppContext.BaseDirectory, "SocialVideoDownloader.Web.exe");
+        var published = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "service", "SocialVideoDownloader.Web.exe"));
+        var exe = File.Exists(beside) ? beside : File.Exists(published) ? published : null;
+        if (exe is not null)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = exe,
+                WorkingDirectory = Path.GetDirectoryName(exe)!,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            });
+            return;
+        }
+
+        var project = FindWebProject();
+        if (project is null)
+            return;
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "dotnet",
+            Arguments = $"run --project \"{project}\"",
+            WorkingDirectory = Path.GetDirectoryName(project)!,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        });
+    }
+
+    private static string? FindWebProject()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var depth = 0; depth < 8 && dir is not null; depth++, dir = dir.Parent)
+        {
+            var project = Path.Combine(dir.FullName, "SocialVideoDownloader.Web", "SocialVideoDownloader.Web.csproj");
+            if (File.Exists(project))
+                return project;
+        }
+
+        return null;
     }
 
     private string? BrowseFolder()
@@ -162,10 +274,39 @@ internal sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
+        try
+        {
+            OpenPath(_downloadDirectory, selectFile: false);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(exception.Message, "Social Video Downloader");
+        }
+    }
+
+    private static void OpenPath(string path, bool selectFile)
+    {
+        var full = Path.GetFullPath(path);
+        if (selectFile)
+        {
+            if (!File.Exists(full))
+                throw new InvalidOperationException("Dosya bulunamadı.");
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{full}\"",
+                UseShellExecute = false,
+            });
+            return;
+        }
+
+        if (!Directory.Exists(full))
+            Directory.CreateDirectory(full);
+
         Process.Start(new ProcessStartInfo
         {
-            FileName = "explorer.exe",
-            Arguments = $"\"{_downloadDirectory}\"",
+            FileName = full,
             UseShellExecute = true,
         });
     }

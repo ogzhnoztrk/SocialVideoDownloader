@@ -51,6 +51,8 @@ public sealed class SettingsService(
         if (update.WebPort is < 1024 or > 65535)
             throw new DownloadException("Bağlantı noktası 1024 ile 65535 arasında olmalıdır.");
 
+        var listenAddress = ListenAddressGuard.Normalize(update.ListenAddress);
+
         var directory = PathSafety.RequireDownloadRoot(update.DownloadDirectory);
         var template = OutputPathBuilder.ValidateTemplate(update.FileNameTemplate);
         Directory.CreateDirectory(directory);
@@ -64,6 +66,7 @@ public sealed class SettingsService(
         }
 
         var previousPort = settings.WebPort;
+        var previousAddress = settings.ListenAddress;
         settings.DownloadDirectory = directory;
         settings.FileNameTemplate = template;
         settings.UseDateFolders = update.UseDateFolders;
@@ -71,15 +74,17 @@ public sealed class SettingsService(
         settings.YtDlpPath = BlankToNull(update.YtDlpPath);
         settings.FfmpegPath = BlankToNull(update.FfmpegPath);
         settings.AutoUpdateBinaries = update.AutoUpdateBinaries;
+        settings.ListenAddress = listenAddress;
         settings.WebPort = update.WebPort;
         settings.OpenWebOnStartup = update.OpenWebOnStartup;
         settings.StartWithWindows = update.StartWithWindows;
         await db.SaveChangesAsync(cancellationToken);
-        HostSettingsStore.WritePort(update.WebPort);
+        HostSettingsStore.Write(listenAddress, update.WebPort);
 
-        string? warning = previousPort == update.WebPort
+        string? warning = previousPort == update.WebPort &&
+            string.Equals(previousAddress, listenAddress, StringComparison.OrdinalIgnoreCase)
             ? null
-            : "Bağlantı noktası servis yeniden başlatılınca uygulanır.";
+            : "IP veya port değişikliği yeniden başlatılınca uygulanır.";
 
         var serviceWarning = windowsServices.TrySetStartup(update.StartWithWindows);
         warning = Join(warning, serviceWarning);
@@ -96,6 +101,7 @@ public sealed class SettingsService(
         YtDlpPath = settings.YtDlpPath,
         FfmpegPath = settings.FfmpegPath,
         AutoUpdateBinaries = settings.AutoUpdateBinaries,
+        ListenAddress = settings.ListenAddress,
         WebPort = settings.WebPort,
         OpenWebOnStartup = settings.OpenWebOnStartup,
         StartWithWindows = settings.StartWithWindows,

@@ -14,8 +14,24 @@ internal static class StartupRegistration
             return;
 
         if (enabled)
-            key.SetValue(ValueName, $"\"{exePath}\"");
+        {
+            var starter = FindStarter() ?? exePath;
+            key.SetValue(ValueName, $"\"{starter}\"");
+        }
         else
             key.DeleteValue(ValueName, throwOnMissingValue: false);
+    }
+
+    public static string? FindStarter()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var depth = 0; depth < 8 && dir is not null; depth++, dir = dir.Parent)
+        {
+            var starter = Path.Combine(dir.FullName, "Baslat.cmd");
+            if (File.Exists(starter))
+                return starter;
+        }
+
+        return null;
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SocialVideoDownloader.Core.Constants;
 using SocialVideoDownloader.Core.Entities;
 
 namespace SocialVideoDownloader.Infrastructure.Data;
@@ -36,6 +37,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.HasKey(settings => settings.Id);
             entity.Property(settings => settings.DownloadDirectory).HasMaxLength(1000).IsRequired();
+            entity.Property(settings => settings.ListenAddress).HasMaxLength(45).IsRequired().HasDefaultValue(AppConstants.DefaultListenAddress);
             entity.Property(settings => settings.FileNameTemplate).HasMaxLength(180).IsRequired();
             entity.Property(settings => settings.YtDlpPath).HasMaxLength(1000);
             entity.Property(settings => settings.FfmpegPath).HasMaxLength(1000);

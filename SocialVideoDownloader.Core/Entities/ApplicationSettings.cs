@@ -20,6 +20,8 @@ public sealed class ApplicationSettings
 
     public bool AutoUpdateBinaries { get; set; }
 
+    public string ListenAddress { get; set; } = AppConstants.DefaultListenAddress;
+
     public int WebPort { get; set; } = AppConstants.DefaultPort;
 
     public bool OpenWebOnStartup { get; set; }
@@ -36,6 +38,7 @@ public sealed class ApplicationSettings
             UseDateFolders = false,
             DuplicateCheckEnabled = true,
             AutoUpdateBinaries = false,
+            ListenAddress = AppConstants.DefaultListenAddress,
             WebPort = AppConstants.DefaultPort,
             OpenWebOnStartup = false,
             StartWithWindows = true,
