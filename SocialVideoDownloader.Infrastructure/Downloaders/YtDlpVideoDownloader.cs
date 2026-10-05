@@ -68,6 +68,7 @@ public sealed class YtDlpVideoDownloader(
         };
 
         string? outputPath = null;
+        var startedAt = DateTime.UtcNow.AddSeconds(-2);
         var result = await _runner.RunAsync(
             executable,
             YtDlpArgumentBuilder.BuildDownloadArguments(safeRequest, ffmpegDirectory, cookieFile),
@@ -87,8 +88,12 @@ public sealed class YtDlpVideoDownloader(
             throw new DownloadException(YtDlpErrorTranslator.Translate(technical), technical);
         }
 
-        if (string.IsNullOrWhiteSpace(outputPath))
-            outputPath = FindNewestFile(Path.GetDirectoryName(request.OutputTemplate));
+        if (string.IsNullOrWhiteSpace(outputPath) || !File.Exists(outputPath))
+        {
+            var fallback = FindNewestFile(Path.GetDirectoryName(request.OutputTemplate), startedAt);
+            if (!string.IsNullOrWhiteSpace(fallback))
+                outputPath = fallback;
+        }
 
         if (string.IsNullOrWhiteSpace(outputPath) || !File.Exists(outputPath))
             throw new DownloadException(UserMessages.VideoNotFound, "yt-dlp finished without an output file.");
@@ -140,14 +145,17 @@ public sealed class YtDlpVideoDownloader(
         return stdout[start..(end + 1)];
     }
 
-    private static string? FindNewestFile(string? directory)
+    private static string? FindNewestFile(string? directory, DateTimeOffset notBeforeUtc)
     {
         if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
             return null;
 
         return Directory.EnumerateFiles(directory)
             .Select(path => new FileInfo(path))
-            .Where(file => file.Length > 0 && file.Extension is not ".part" and not ".ytdl" and not ".tmp")
+            .Where(file =>
+                file.Length > 0 &&
+                file.LastWriteTimeUtc >= notBeforeUtc.UtcDateTime &&
+                file.Extension is not ".part" and not ".ytdl" and not ".tmp")
             .OrderByDescending(file => file.LastWriteTimeUtc)
             .Select(file => file.FullName)
             .FirstOrDefault();
