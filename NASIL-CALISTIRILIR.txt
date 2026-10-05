@@ -1,0 +1,118 @@
+Social Video Downloader — bu bilgisayarda çalıştırma
+====================================================
+
+Program yalnızca bu bilgisayardan açılır. Adres:
+http://localhost:5180
+
+Tarayıcıyı açmadan önce web programının çalışıyor olması gerekir.
+İndirilen videolar varsayılan olarak şu klasöre gider:
+C:\Users\PC\Videos\SocialDownloads
+
+Log dosyaları:
+C:\ProgramData\SocialVideoDownloader\Logs
+
+
+1. Gerekenler
+-------------
+
+- Windows
+- .NET 10 SDK (bu bilgisayarda kurulu: dotnet --version ile kontrol edilir)
+- İnternet (yt-dlp, FFmpeg ve videolar için)
+
+
+2. Günlük kullanım (en kolay yol)
+---------------------------------
+
+PowerShell veya Terminal açın ve şu komutları çalıştırın:
+
+    cd C:\Users\PC\source\SocialVideoDownloader
+    dotnet run --project SocialVideoDownloader.Web
+
+"Now listening on: http://localhost:5180" yazısını gördükten sonra
+tarayıcıda şu adresi açın:
+
+    http://localhost:5180
+
+Bu pencereyi kapatmayın. Kapatırsanız web paneli de kapanır.
+Durdurmak için o pencerede Ctrl+C yapın.
+
+
+3. İlk açılışta ayarlar
+-----------------------
+
+Web panelinde Ayarlar sayfasına girin.
+
+- İndirme klasörünü kontrol edin.
+- Downloader bölümünden yt-dlp kurulumunu yapın.
+- Aynı bölümden FFmpeg kurulumunu yapın.
+
+yt-dlp yoksa video bilgisi alınamaz ve indirme başlamaz.
+FFmpeg yoksa bazı videolarda ses ve görüntü birleşmeyebilir.
+
+Kurulumdan sonra sayfayı yenileyin. Araçlar "kurulu" görünüyorsa
+ana sayfaya dönüp bir video adresini yapıştırabilirsiniz.
+
+
+4. Sistem tepsisi (isteğe bağlı)
+--------------------------------
+
+Web programı çalışırken ikinci bir pencerede şunu çalıştırın:
+
+    cd C:\Users\PC\source\SocialVideoDownloader
+    dotnet run --project SocialVideoDownloader.Tray
+
+Saat yanındaki tepsi simgesine sağ tıklayınca menü çıkar:
+
+- Web Panelini Aç
+- İndirme Klasörünü Aç
+- Ayarlar
+- Çıkış
+
+Çıkış yalnızca tepsi simgesini kapatır. Web programı kendi penceresinde
+çalışmaya devam eder.
+
+Tepsi, web programı kapalıyken kırmızı / durmuş görünebilir.
+Önce Web projesini başlatın.
+
+
+5. Bilgisayar açılınca kendi kendine çalışsın
+----------------------------------------------
+
+Bunu bir kez yapmanız yeter. Yönetici PowerShell gerekir.
+
+    cd C:\Users\PC\source\SocialVideoDownloader
+    powershell -ExecutionPolicy Bypass -File .\scripts\publish.ps1
+
+Bu komut programı dist klasörüne hazırlar.
+Sonra dist\service klasöründeki install-service.ps1 dosyasına
+sağ tıklayıp "PowerShell ile çalıştır" deyin. Yönetici izni isteyecektir.
+
+Kurulum şunları yapar:
+
+- SocialVideoDownloader adlı Windows hizmetini otomatik başlatır.
+- Bilgisayar her açıldığında web paneli ve indirme işçisi arka planda çalışır.
+- Oturum açılınca tepsi uygulaması da açılır.
+
+Kaldırmak için aynı klasördeki uninstall-service.ps1 dosyasını
+yönetici olarak çalıştırın.
+
+Hizmet kurulduktan sonra tarayıcı adresi yine şudur:
+
+    http://localhost:5180
+
+
+6. Sık karşılaşılan durumlar
+-----------------------------
+
+- Sayfa açılmıyor: Web penceresi çalışıyor mu diye bakın.
+  Adres http://localhost:5180 olmalı. Başka bir bilgisayardan açılmaz.
+
+- "yt-dlp bulunamadı": Ayarlar > Downloader bölümünden yt-dlp kurun.
+
+- İndirme hemen hata veriyor: Adresin tek parça olduğundan emin olun.
+  Aynı adresi iki kez yapıştırmayın.
+
+- Kod değiştirdikten sonra eski davranış sürüyor:
+  dotnet run ile çalışıyorsanız pencereyi Ctrl+C ile durdurup
+  aynı komutu yeniden çalıştırın.
+  Windows hizmeti kurduysanız hizmeti yeniden başlatın.
