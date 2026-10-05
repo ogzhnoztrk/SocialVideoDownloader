@@ -77,7 +77,17 @@ public static class PathSafety
 
     private static void RejectLinkEscape(string root, string fullPath)
     {
-        FileSystemInfo info = File.Exists(fullPath) ? new FileInfo(fullPath) : new DirectoryInfo(fullPath);
+        var existing = fullPath;
+        while (!File.Exists(existing) && !Directory.Exists(existing))
+        {
+            var parent = Path.GetDirectoryName(existing);
+            if (string.IsNullOrEmpty(parent) || parent.Equals(existing, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            existing = parent;
+        }
+
+        FileSystemInfo info = File.Exists(existing) ? new FileInfo(existing) : new DirectoryInfo(existing);
         var target = info.ResolveLinkTarget(returnFinalTarget: true);
         if (target is null)
             return;
