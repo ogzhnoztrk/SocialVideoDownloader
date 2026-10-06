@@ -1,11 +1,14 @@
 const urlInput = document.querySelector("#video-url");
 const infoPanel = document.querySelector("#info-panel");
 const categorySelect = document.querySelector("#download-category");
+const fileCategorySelect = document.querySelector("#file-category");
 let currentInfo = null;
 let categories = [];
 
 document.querySelector("#info-button").addEventListener("click", loadInfo);
 document.querySelector("#import-file").addEventListener("click", importFile);
+document.querySelector("#tab-link").addEventListener("click", () => showPane("link"));
+document.querySelector("#tab-file").addEventListener("click", () => showPane("file"));
 document.querySelector("#download-button").addEventListener("click", startDownload);
 document.querySelector("#change-folder").addEventListener("click", changeFolder);
 urlInput.addEventListener("keydown", (event) => {
@@ -14,6 +17,9 @@ urlInput.addEventListener("keydown", (event) => {
 categorySelect.addEventListener("change", () => {
     localStorage.setItem("svd-category", categorySelect.value);
     if (currentInfo) text("#info-folder", previewFolder(currentInfo.downloadDirectory, currentInfo.platformName));
+});
+fileCategorySelect.addEventListener("change", () => {
+    localStorage.setItem("svd-file-category", fileCategorySelect.value);
 });
 
 async function loadInfo() {
@@ -54,11 +60,17 @@ async function importFile() {
         return;
     }
 
-    const body = new FormData();
-    body.append("file", file);
-    if (categorySelect.value) body.append("categoryId", categorySelect.value);
-    Swal.fire({ title: "Liste kuyruğa alınıyor", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    const category = categories.find((item) => String(item.id) === fileCategorySelect.value);
+    if (!category) {
+        notifyError(new Error("TXT için bir kategori seçin."));
+        return;
+    }
+
     try {
+        const body = new FormData();
+        body.append("file", file);
+        body.append("categoryId", String(category.id));
+        Swal.fire({ title: "Liste kuyruğa alınıyor", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const response = await fetch("/api/downloads/import", {
             method: "POST",
             headers: { "X-SVD-Request": "1" },
@@ -71,7 +83,7 @@ async function importFile() {
         await Swal.fire({
             icon: data.added > 0 ? "success" : "info",
             title: data.added > 0 ? "Liste kuyruğa alındı" : "Yeni video yok",
-            text: data.message || "",
+            text: `${data.message || ""} Kategori: ${category.name}`.trim(),
             confirmButtonText: "Tamam",
         });
         await refresh();
@@ -202,20 +214,37 @@ function selectedCategoryName() {
     return selected?.name || "Genel";
 }
 
-async function loadCategories() {
-    categories = await api("/api/categories");
-    const saved = categorySelect.value || localStorage.getItem("svd-category");
-    categorySelect.replaceChildren();
+function showPane(name) {
+    const link = name === "link";
+    document.querySelector("#pane-link").classList.toggle("d-none", !link);
+    document.querySelector("#pane-file").classList.toggle("d-none", link);
+    document.querySelector("#tab-link").classList.toggle("is-active", link);
+    document.querySelector("#tab-file").classList.toggle("is-active", !link);
+    document.querySelector("#tab-link").setAttribute("aria-selected", link ? "true" : "false");
+    document.querySelector("#tab-file").setAttribute("aria-selected", link ? "false" : "true");
+    if (!link) infoPanel.classList.add("d-none");
+    else if (currentInfo) infoPanel.classList.remove("d-none");
+}
+
+function fillCategorySelect(select, savedId) {
+    const current = savedId || select.value;
+    select.replaceChildren();
     categories.forEach((item) => {
         const option = document.createElement("option");
         option.value = String(item.id);
         option.textContent = item.isDefault ? `${item.name} (varsayılan)` : item.name;
-        categorySelect.append(option);
+        select.append(option);
     });
-    const preferred = categories.find((item) => String(item.id) === saved)
+    const preferred = categories.find((item) => String(item.id) === current)
         || categories.find((item) => item.isDefault)
         || categories[0];
-    if (preferred) categorySelect.value = String(preferred.id);
+    if (preferred) select.value = String(preferred.id);
+}
+
+async function loadCategories() {
+    categories = await api("/api/categories");
+    fillCategorySelect(categorySelect, categorySelect.value || localStorage.getItem("svd-category"));
+    fillCategorySelect(fileCategorySelect, fileCategorySelect.value || localStorage.getItem("svd-file-category"));
 }
 
 function renderGist(gist, defaultCategory) {

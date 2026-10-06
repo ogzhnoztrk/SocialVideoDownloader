@@ -1,20 +1,31 @@
 ﻿<div id="tool-banner" class="tool-banner d-none"></div>
 
 <section class="panel">
-    <div class="section-label">Video URL</div>
-    <label for="download-category">Kategori</label>
-    <select id="download-category" class="category-select"></select>
-    <p class="hint">Video, seçilen kategorinin içinde platform klasörüne iner: Instagram, TikTok veya Twitter.</p>
-    <label class="visually-hidden" for="video-url">Video URL</label>
-    <input id="video-url" class="url-input" type="url" placeholder="https://www.instagram.com/reel/..." autocomplete="off" />
-    <div class="action-row">
-        <button id="info-button" class="btn btn-accent" type="button">Video Bilgisini Getir</button>
+    <div class="mode-tabs" role="tablist">
+        <button id="tab-link" class="mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="pane-link">Link</button>
+        <button id="tab-file" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="pane-file">TXT</button>
     </div>
-    <div class="folder-row">
-        <input id="url-file" class="url-file" type="file" accept=".txt,text/plain" />
-        <button id="import-file" class="btn btn-ghost" type="button">TXT'den İndir</button>
+
+    <div id="pane-link" role="tabpanel">
+        <label for="download-category">Kategori</label>
+        <select id="download-category" class="category-select"></select>
+        <p class="hint">Video, seçilen kategorinin içinde platform klasörüne iner: Instagram, TikTok veya Twitter.</p>
+        <label class="visually-hidden" for="video-url">Video URL</label>
+        <input id="video-url" class="url-input" type="url" placeholder="https://www.instagram.com/reel/..." autocomplete="off" />
+        <div class="action-row">
+            <button id="info-button" class="btn btn-accent" type="button">Video Bilgisini Getir</button>
+        </div>
     </div>
-    <p class="hint">Her satır bir video adresidir. Boş satırlar ve # ile başlayan satırlar atlanır. Liste, yukarıda seçili kategoriye iner.</p>
+
+    <div id="pane-file" class="d-none" role="tabpanel">
+        <label for="file-category">Kategori</label>
+        <select id="file-category" class="category-select"></select>
+        <p class="hint">Dosyadaki bütün adresler seçilen kategoriye iner. İçinde Instagram, TikTok ve Twitter klasörleri ayrı oluşur.</p>
+        <div class="folder-row">
+            <input id="url-file" class="url-file" type="file" accept=".txt,text/plain" />
+            <button id="import-file" class="btn btn-accent" type="button">TXT'den İndir</button>
+        </div>
+    </div>
 </section>
 
 <section id="info-panel" class="panel d-none">

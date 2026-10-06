@@ -130,6 +130,27 @@ input[type="file"].url-file {
     padding: 10px 12px;
 }
 
+.mode-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.mode-tab {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-weight: 650;
+}
+
+.mode-tab.is-active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
 select.category-select {
     width: 100%;
     border: 1px solid #d9d2c5;
