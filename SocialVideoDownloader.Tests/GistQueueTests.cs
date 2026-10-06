@@ -223,6 +223,37 @@ public class GistQueueTests : IDisposable
     }
 
     [Fact]
+    public async Task Each_category_downloads_from_its_own_gist()
+    {
+        await SaveSettingsAsync(includeGist: false);
+        int sadId;
+        int shitId;
+        await using (var scope = _services.CreateAsyncScope())
+        {
+            var categories = scope.ServiceProvider.GetRequiredService<ICategoryService>();
+            var sad = await categories.CreateAsync("sad_post", CancellationToken.None);
+            var shit = await categories.CreateAsync("shitpost", CancellationToken.None);
+            sadId = sad.Id;
+            shitId = shit.Id;
+            await categories.SetGistAsync(sadId, "https://gist.github.com/username/aaaaaaaaaaaaaaaa", CancellationToken.None);
+            await categories.SetGistAsync(shitId, "https://gist.github.com/username/bbbbbbbbbbbbbbbb", CancellationToken.None);
+        }
+
+        _gist.ByUrl["https://gist.github.com/username/aaaaaaaaaaaaaaaa"] = "https://instagram.com/reel/SAD";
+        _gist.ByUrl["https://gist.github.com/username/bbbbbbbbbbbbbbbb"] = "https://tiktok.com/@user/video/SHIT";
+
+        var result = await CheckAsync();
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(2, result.Added);
+        Assert.Contains("sad_post", result.Message);
+        Assert.Contains("shitpost", result.Message);
+        var jobs = await JobsAsync();
+        Assert.Contains(jobs, job => job.CategoryName == "sad_post" && job.NormalizedUrl == "https://instagram.com/reel/SAD");
+        Assert.Contains(jobs, job => job.CategoryName == "shitpost" && job.NormalizedUrl == "https://tiktok.com/@user/video/SHIT");
+    }
+
+    [Fact]
     public async Task An_unreachable_gist_does_not_throw()
     {
         await SaveSettingsAsync();
@@ -247,7 +278,7 @@ public class GistQueueTests : IDisposable
         }
     }
 
-    private async Task SaveSettingsAsync()
+    private async Task SaveSettingsAsync(bool includeGist = true)
     {
         await using var scope = _services.CreateAsyncScope();
         var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
@@ -258,7 +289,7 @@ public class GistQueueTests : IDisposable
             DownloadDirectory = _root,
             FileNameTemplate = "%(title)s.%(ext)s",
             WebPort = 5180,
-            GistUrl = "https://gist.github.com/username/abcdef1234567890",
+            GistUrl = includeGist ? "https://gist.github.com/username/abcdef1234567890" : null,
             GistPollingEnabled = true,
             GistPollIntervalMinutes = 60,
         });
@@ -284,12 +315,17 @@ public class GistQueueTests : IDisposable
     {
         public string Content { get; set; } = string.Empty;
 
+        public Dictionary<string, string> ByUrl { get; } = new(StringComparer.OrdinalIgnoreCase);
+
         public bool Fail { get; set; }
 
         public Task<string> GetContentAsync(string gistUrl, CancellationToken cancellationToken)
         {
             if (Fail)
                 throw new HttpRequestException("offline");
+
+            if (ByUrl.TryGetValue(gistUrl, out var content))
+                return Task.FromResult(content);
 
             return Task.FromResult(Content);
         }

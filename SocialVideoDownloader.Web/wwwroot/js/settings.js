@@ -1,4 +1,5 @@
 const form = document.querySelector("#settings-form");
+let savedGistUrl = "";
 
 async function loadSettings() {
     const [settings, binaries, service] = await Promise.all([
@@ -17,7 +18,7 @@ async function loadSettings() {
     document.querySelector("#web-port").value = settings.webPort;
     document.querySelector("#open-on-startup").checked = settings.openWebOnStartup;
     document.querySelector("#start-with-windows").checked = settings.startWithWindows;
-    document.querySelector("#gist-url").value = settings.gistUrl || "";
+    savedGistUrl = settings.gistUrl || "";
     document.querySelector("#gist-enabled").checked = !!settings.gistPollingEnabled;
 
     const binary = document.querySelector("#binary-status");
@@ -110,7 +111,7 @@ function readForm() {
         webPort: Number(document.querySelector("#web-port").value),
         openWebOnStartup: document.querySelector("#open-on-startup").checked,
         startWithWindows: document.querySelector("#start-with-windows").checked,
-        gistUrl: document.querySelector("#gist-url").value.trim(),
+        gistUrl: savedGistUrl,
         gistPollingEnabled: document.querySelector("#gist-enabled").checked,
         gistPollIntervalMinutes: 60,
     };
@@ -145,6 +146,7 @@ async function loadCategories() {
     const root = document.querySelector("#category-list");
     root.replaceChildren();
     items.forEach((item) => {
+        const block = el("div", "category-block");
         const row = el("div", "category-row");
         const title = el("strong", null, item.name);
         row.append(title);
@@ -181,7 +183,30 @@ async function loadCategories() {
         });
         actions.append(remove);
         row.append(actions);
-        root.append(row);
+        block.append(row);
+
+        const gistRow = el("div", "inline-field category-gist");
+        const gist = document.createElement("input");
+        gist.type = "url";
+        gist.placeholder = "https://gist.github.com/kullanici/xxxxxxxx";
+        gist.value = item.gistUrl || "";
+        gist.setAttribute("aria-label", `${item.name} gist adresi`);
+        const save = el("button", "btn btn-ghost", "Gist kaydet");
+        save.type = "button";
+        save.addEventListener("click", async () => {
+            try {
+                await api(`/api/categories/${item.id}/gist`, {
+                    method: "PUT",
+                    body: JSON.stringify({ gistUrl: gist.value.trim() }),
+                });
+                await loadCategories();
+            } catch (error) {
+                notifyError(error);
+            }
+        });
+        gistRow.append(gist, save);
+        block.append(gistRow);
+        root.append(block);
     });
 }
 

@@ -12,5 +12,7 @@ public interface ICategoryService
 
     Task<CategoryDto> SetDefaultAsync(int id, CancellationToken cancellationToken);
 
+    Task<CategoryDto> SetGistAsync(int id, string? gistUrl, CancellationToken cancellationToken);
+
     Task<string> ResolveFolderAsync(int? categoryId, CancellationToken cancellationToken);
 }

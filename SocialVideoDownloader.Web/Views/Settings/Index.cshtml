@@ -38,14 +38,12 @@
 
     <section class="panel">
         <h2>Uzaktan İndirme</h2>
-        <label for="gist-url">GitHub Gist URL</label>
-        <input id="gist-url" placeholder="https://gist.github.com/kullanici/xxxxxxxx" />
         <label class="check"><input id="gist-enabled" type="checkbox" /> Gist kontrolünü aktif et</label>
-        <p class="hint">Kontrol sıklığı: 60 dakika</p>
+        <p class="hint">Kontrol sıklığı: 60 dakika. Adresi olan her kategori kendi gist dosyasını okur.</p>
         <div class="action-row">
             <button id="gist-check" class="btn btn-ghost" type="button">Şimdi Kontrol Et</button>
         </div>
-        <p class="hint">Public bir gist yeter. Bilgisayar dışarıya açılmaz; program yalnızca gist dosyasını okur. Adresi kaydettikten sonra kontrol başlar.</p>
+        <p class="hint">Public gist yeter. Bilgisayar dışarıya açılmaz; program yalnızca gist dosyasını okur. sad_post ve shitpost gibi kategorilerin adresini aşağıdaki listeden kaydedin.</p>
     </section>
 
     <section class="panel">
@@ -67,7 +65,7 @@
 
 <section class="panel">
     <h2>Kategoriler</h2>
-    <p class="hint">Örnek: turkce_meme\Instagram, turkce_meme\TikTok, turkce_meme\Twitter. Gist ve diğer toplu indirmeler varsayılan kategoriye gider.</p>
+    <p class="hint">Örnek: sad_post\Instagram, shitpost\TikTok. Her kategorinin gist adresi ayrıdır. Kontrol, o listedeki videoları ilgili kategoriye indirir. Adresi boş olan kategori atlanır.</p>
     <div class="inline-field">
         <input id="category-name" placeholder="turkce_meme" />
         <button id="add-category" class="btn btn-accent" type="button">Ekle</button>

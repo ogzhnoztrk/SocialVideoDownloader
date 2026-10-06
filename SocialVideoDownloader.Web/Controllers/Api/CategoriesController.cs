@@ -39,6 +39,19 @@ public sealed class CategoriesController(ICategoryService categories) : Controll
         }
     }
 
+    [HttpPut("{id:int}/gist")]
+    public async Task<IActionResult> SetGist(int id, [FromBody] CategoryGistRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await categories.SetGistAsync(id, request.GistUrl, cancellationToken));
+        }
+        catch (DownloadException exception)
+        {
+            return ApiResults.FromException(exception);
+        }
+    }
+
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
@@ -56,5 +69,10 @@ public sealed class CategoriesController(ICategoryService categories) : Controll
     public sealed class CategoryRequest
     {
         public string? Name { get; set; }
+    }
+
+    public sealed class CategoryGistRequest
+    {
+        public string? GistUrl { get; set; }
     }
 }

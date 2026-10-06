@@ -9,7 +9,7 @@ namespace SocialVideoDownloader.Infrastructure.Services;
 public sealed class GistImportService(
     IGistClient gistClient,
     IUrlListImportService lists,
-    ISettingsService settingsService,
+    ICategoryService categories,
     IDbContextFactory<AppDbContext> dbFactory,
     ILogger<GistImportService> logger) : IGistImportService
 {
@@ -33,8 +33,10 @@ public sealed class GistImportService(
     private async Task<GistImportResult> CheckCoreAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("[Gist] Kontrol başlatıldı.");
-        var settings = await settingsService.GetEntityAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(settings.GistUrl))
+        var sources = (await categories.ListAsync(cancellationToken))
+            .Where(category => !string.IsNullOrWhiteSpace(category.GistUrl))
+            .ToList();
+        if (sources.Count == 0)
         {
             var empty = new GistImportResult { Message = "Gist adresi boş." };
             await RememberAsync(empty, cancellationToken);
@@ -42,28 +44,50 @@ public sealed class GistImportService(
             return empty;
         }
 
-        string content;
-        try
+        var aggregate = new GistImportResult { Succeeded = true };
+        var messages = new List<string>();
+        foreach (var source in sources)
         {
-            content = await gistClient.GetContentAsync(settings.GistUrl, cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            logger.LogWarning(exception, "[Gist] Gist kontrolü başarısız: {Message}", exception.Message);
-            var failed = new GistImportResult { Message = "Gist dosyasına erişilemedi." };
-            await RememberAsync(failed, cancellationToken);
-            return failed;
+            logger.LogInformation("[Gist] {Category} kontrol ediliyor.", source.Name);
+            string content;
+            try
+            {
+                content = await gistClient.GetContentAsync(source.GistUrl!, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "[Gist] {Category} kontrolü başarısız: {Message}", source.Name, exception.Message);
+                aggregate.Succeeded = false;
+                messages.Add(sources.Count == 1
+                    ? "Gist dosyasına erişilemedi."
+                    : $"{source.Name}: Gist dosyasına erişilemedi.");
+                continue;
+            }
+
+            logger.LogInformation("[Gist] {Category} içeriği alındı.", source.Name);
+            var result = await lists.ImportAsync(
+                content,
+                source.Id,
+                DownloadSource.Gist,
+                $"[Gist] {source.Name}",
+                cancellationToken);
+            aggregate.Found += result.Found;
+            aggregate.Added += result.Added;
+            aggregate.AlreadyDownloaded += result.AlreadyDownloaded;
+            aggregate.AlreadyQueued += result.AlreadyQueued;
+            aggregate.Retried += result.Retried;
+            aggregate.Invalid += result.Invalid;
+            messages.Add(sources.Count == 1 ? result.Message : $"{source.Name}: {result.Message}");
         }
 
-        logger.LogInformation("[Gist] Gist içeriği alındı.");
-        var result = await lists.ImportAsync(content, null, DownloadSource.Gist, "[Gist]", cancellationToken);
-        await RememberAsync(result, cancellationToken);
+        aggregate.Message = string.Join(" ", messages);
+        await RememberAsync(aggregate, cancellationToken);
         logger.LogInformation("[Gist] Kontrol tamamlandı.");
-        return result;
+        return aggregate;
     }
 
     private async Task RememberAsync(GistImportResult result, CancellationToken cancellationToken)

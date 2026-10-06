@@ -7,4 +7,6 @@ public sealed class CategoryDto
     public string Name { get; set; } = string.Empty;
 
     public bool IsDefault { get; set; }
+
+    public string? GistUrl { get; set; }
 }

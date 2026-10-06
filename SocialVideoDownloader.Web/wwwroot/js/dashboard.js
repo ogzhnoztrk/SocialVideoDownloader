@@ -128,7 +128,7 @@ async function refresh() {
     ]);
     renderStats(stats);
     renderRecent(recent);
-    renderGist(status.gist, categories.find((item) => item.isDefault));
+    renderGist(status.gist);
     const banner = document.querySelector("#tool-banner");
     if (!status.ytDlpAvailable) {
         banner.classList.remove("d-none");
@@ -247,7 +247,7 @@ async function loadCategories() {
     fillCategorySelect(fileCategorySelect, fileCategorySelect.value || localStorage.getItem("svd-file-category"));
 }
 
-function renderGist(gist, defaultCategory) {
+function renderGist(gist) {
     const root = document.querySelector("#gist-status");
     if (!gist) {
         root.textContent = "Durum: Kapalı";
@@ -262,8 +262,10 @@ function renderGist(gist, defaultCategory) {
         lines.push(`Hata: ${gist.message || "Gist dosyasına erişilemedi"}`);
     else if (gist.message)
         lines.push(`Son kontrol sonucu: ${gist.message}`);
-    if (defaultCategory)
-        lines.push(`Varsayılan kategori: ${defaultCategory.name}`);
+    const watched = categories.filter((item) => item.gistUrl);
+    lines.push(watched.length
+        ? `Gist kategorileri: ${watched.map((item) => item.name).join(", ")}`
+        : "Gist kategorisi yok");
     root.style.whiteSpace = "pre-line";
     root.textContent = lines.join("\n");
 }

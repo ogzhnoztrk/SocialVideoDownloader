@@ -8,5 +8,7 @@ public sealed class DownloadCategory
 
     public bool IsDefault { get; set; }
 
+    public string? GistUrl { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }

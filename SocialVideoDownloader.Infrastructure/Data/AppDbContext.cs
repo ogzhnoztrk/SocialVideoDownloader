@@ -61,6 +61,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.HasKey(category => category.Id);
             entity.Property(category => category.Name).HasMaxLength(40).IsRequired();
+            entity.Property(category => category.GistUrl).HasMaxLength(500);
             entity.HasIndex(category => category.Name).IsUnique();
         });
     }
