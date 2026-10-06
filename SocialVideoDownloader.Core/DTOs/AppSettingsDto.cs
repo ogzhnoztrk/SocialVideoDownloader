@@ -25,4 +25,10 @@ public sealed class AppSettingsDto
     public bool OpenWebOnStartup { get; set; }
 
     public bool StartWithWindows { get; set; }
+
+    public string? GistUrl { get; set; }
+
+    public bool GistPollingEnabled { get; set; }
+
+    public int GistPollIntervalMinutes { get; set; } = AppConstants.DefaultGistPollMinutes;
 }

@@ -8,11 +8,13 @@ internal sealed class TrayApplicationContext : ApplicationContext
 {
     private readonly NotifyIcon _icon;
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(4) };
+    private readonly HttpClient _gistHttp = new() { Timeout = TimeSpan.FromMinutes(10) };
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 3000 };
     private readonly Icon _runningIcon = StatusIcon.Create(Color.FromArgb(15, 110, 86));
     private readonly Icon _stoppedIcon = StatusIcon.Create(Color.FromArgb(159, 45, 45));
     private readonly ToolStripMenuItem _statusItem = new("Durum: Durdu") { Enabled = false };
     private readonly ToolStripMenuItem _downloadItem = new("İndirme: 0") { Enabled = false };
+    private readonly ToolStripMenuItem _gistItem = new("Gist: Kapalı") { Enabled = false };
     private TrayHelperServer? _helper;
     private bool _openedWeb;
     private int _port = AppConstants.DefaultPort;
@@ -34,8 +36,10 @@ internal sealed class TrayApplicationContext : ApplicationContext
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_statusItem);
         menu.Items.Add(_downloadItem);
+        menu.Items.Add(_gistItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("İndirme Klasörünü Aç", null, (_, _) => OpenFolder());
+        menu.Items.Add("Gist'i Şimdi Kontrol Et", null, (_, _) => _ = CheckGistAsync());
         menu.Items.Add("Ayarlar", null, (_, _) => OpenWeb("/Settings"));
         menu.Items.Add("Servisi Yeniden Başlat", null, (_, _) => RestartService());
         menu.Items.Add(new ToolStripSeparator());
@@ -230,6 +234,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             _icon.Icon = _stoppedIcon;
             _statusItem.Text = "Durum: Durdu";
             _downloadItem.Text = "İndirme: 0";
+            _gistItem.Text = "Gist: Kapalı";
             _icon.Text = "Social Video Downloader - Durdu";
         }
     }
@@ -249,11 +254,48 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _icon.Icon = _runningIcon;
         _statusItem.Text = "Durum: Çalışıyor";
         _downloadItem.Text = $"İndirme: {active}";
+        _gistItem.Text = GistMenuText(root);
         _icon.Text = $"Social Video Downloader - Çalışıyor ({active})";
         if (openWeb && !_openedWeb)
         {
             _openedWeb = true;
             OpenWeb();
+        }
+    }
+
+    private static string GistMenuText(JsonElement root)
+    {
+        if (!root.TryGetProperty("gist", out var gist))
+            return "Gist: Kapalı";
+
+        var status = gist.TryGetProperty("status", out var statusValue) ? statusValue.GetString() : "Kapalı";
+        var mark = status == "Aktif" ? "🟢" : status == "Hata" ? "🔴" : "⚪";
+        var last = "—";
+        if (gist.TryGetProperty("lastCheckedAt", out var checkedAt) &&
+            checkedAt.ValueKind == JsonValueKind.String &&
+            DateTimeOffset.TryParse(checkedAt.GetString(), out var time))
+            last = time.ToLocalTime().ToString("HH:mm");
+
+        return $"Gist: {mark} {status}, Son kontrol: {last}";
+    }
+
+    private async Task CheckGistAsync()
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"http://127.0.0.1:{_port}/api/gist/check");
+            request.Headers.TryAddWithoutValidation("X-SVD-Request", "1");
+            using var response = await _gistHttp.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+            var message = document.RootElement.TryGetProperty("message", out var value)
+                ? value.GetString()
+                : "Gist kontrolü tamamlandı.";
+            MessageBox.Show(message ?? "Gist kontrolü tamamlandı.", "Social Video Downloader");
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Gist kontrolü gönderilemedi. Program çalışıyor mu?", "Social Video Downloader");
         }
     }
 

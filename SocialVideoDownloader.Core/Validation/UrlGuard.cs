@@ -45,6 +45,26 @@ public static class UrlGuard
         return true;
     }
 
+    public static bool TryCanonical(string? input, out string canonical)
+    {
+        canonical = string.Empty;
+        if (!TryNormalize(input, out var absolute) || !Uri.TryCreate(absolute, UriKind.Absolute, out var uri))
+            return false;
+
+        canonical = Canonical(uri);
+        return true;
+    }
+
+    private static string Canonical(Uri uri)
+    {
+        var host = uri.Host;
+        if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+            host = host[4..];
+
+        var path = uri.AbsolutePath.TrimEnd('/');
+        return $"{uri.Scheme}://{host}{path}{uri.Query}";
+    }
+
     private static bool IsBlockedAddress(string host)
     {
         if (!IPAddress.TryParse(host.Trim('[', ']'), out var address))

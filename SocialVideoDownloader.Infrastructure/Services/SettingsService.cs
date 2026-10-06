@@ -4,6 +4,7 @@ using SocialVideoDownloader.Core.DTOs;
 using SocialVideoDownloader.Core.Entities;
 using SocialVideoDownloader.Core.Exceptions;
 using SocialVideoDownloader.Core.Interfaces;
+using SocialVideoDownloader.Core.Gist;
 using SocialVideoDownloader.Core.Validation;
 using SocialVideoDownloader.Infrastructure.Configuration;
 using SocialVideoDownloader.Infrastructure.Data;
@@ -52,6 +53,9 @@ public sealed class SettingsService(
             throw new DownloadException("Bağlantı noktası 1024 ile 65535 arasında olmalıdır.");
 
         var listenAddress = ListenAddressGuard.Normalize(update.ListenAddress);
+        var gistUrl = BlankToNull(update.GistUrl);
+        if (gistUrl is not null && !GistUrlResolver.TryGetRawUrl(gistUrl, out _))
+            throw new DownloadException("Gist adresi geçersiz. Public gist bağlantısı girin.");
 
         var directory = PathSafety.RequireDownloadRoot(update.DownloadDirectory);
         var template = OutputPathBuilder.ValidateTemplate(update.FileNameTemplate);
@@ -78,6 +82,12 @@ public sealed class SettingsService(
         settings.WebPort = update.WebPort;
         settings.OpenWebOnStartup = update.OpenWebOnStartup;
         settings.StartWithWindows = update.StartWithWindows;
+        settings.GistUrl = gistUrl;
+        settings.GistPollingEnabled = update.GistPollingEnabled;
+        if (update.GistPollIntervalMinutes >= 1)
+            settings.GistPollIntervalMinutes = update.GistPollIntervalMinutes;
+        else if (settings.GistPollIntervalMinutes < 1)
+            settings.GistPollIntervalMinutes = AppConstants.DefaultGistPollMinutes;
         await db.SaveChangesAsync(cancellationToken);
         HostSettingsStore.Write(listenAddress, update.WebPort);
 
@@ -105,6 +115,11 @@ public sealed class SettingsService(
         WebPort = settings.WebPort,
         OpenWebOnStartup = settings.OpenWebOnStartup,
         StartWithWindows = settings.StartWithWindows,
+        GistUrl = settings.GistUrl,
+        GistPollingEnabled = settings.GistPollingEnabled,
+        GistPollIntervalMinutes = settings.GistPollIntervalMinutes < 1
+            ? AppConstants.DefaultGistPollMinutes
+            : settings.GistPollIntervalMinutes,
     };
 
     private static string? BlankToNull(string? value) =>

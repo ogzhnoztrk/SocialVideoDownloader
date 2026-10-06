@@ -1,5 +1,6 @@
 using SocialVideoDownloader.Core.DTOs;
 using SocialVideoDownloader.Core.Entities;
+using SocialVideoDownloader.Core.Enums;
 
 namespace SocialVideoDownloader.Core.Interfaces;
 
@@ -7,7 +8,11 @@ public interface IDownloadJobService
 {
     Task<VideoInfoResult> GetVideoInfoAsync(string url, CancellationToken cancellationToken);
 
-    Task<CreateDownloadResponse> CreateAsync(string url, CancellationToken cancellationToken);
+    Task<CreateDownloadResponse> CreateAsync(
+        string url,
+        CancellationToken cancellationToken,
+        DownloadSource source = DownloadSource.Manual,
+        int? categoryId = null);
 
     Task<DownloadJobDto?> GetAsync(Guid id, CancellationToken cancellationToken);
 

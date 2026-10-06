@@ -28,6 +28,18 @@ public sealed class ApplicationSettings
 
     public bool StartWithWindows { get; set; }
 
+    public string? GistUrl { get; set; }
+
+    public bool GistPollingEnabled { get; set; }
+
+    public int GistPollIntervalMinutes { get; set; } = AppConstants.DefaultGistPollMinutes;
+
+    public DateTime? GistLastCheckedUtc { get; set; }
+
+    public bool GistLastSucceeded { get; set; }
+
+    public string? GistLastMessage { get; set; }
+
     public static ApplicationSettings CreateDefault()
     {
         return new ApplicationSettings
@@ -42,6 +54,8 @@ public sealed class ApplicationSettings
             WebPort = AppConstants.DefaultPort,
             OpenWebOnStartup = false,
             StartWithWindows = true,
+            GistPollingEnabled = false,
+            GistPollIntervalMinutes = AppConstants.DefaultGistPollMinutes,
         };
     }
 

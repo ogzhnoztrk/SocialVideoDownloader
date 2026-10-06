@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialVideoDownloader.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using SocialVideoDownloader.Infrastructure.Data;
 namespace SocialVideoDownloader.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006075002_AddGistQueue")]
+    partial class AddGistQueue
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
@@ -97,31 +100,6 @@ namespace SocialVideoDownloader.Infrastructure.Data.Migrations
                     b.ToTable("ApplicationSettings");
                 });
 
-            modelBuilder.Entity("SocialVideoDownloader.Core.Entities.DownloadCategory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("DownloadCategories");
-                });
-
             modelBuilder.Entity("SocialVideoDownloader.Core.Entities.DownloadJob", b =>
                 {
                     b.Property<Guid>("Id")
@@ -130,13 +108,6 @@ namespace SocialVideoDownloader.Infrastructure.Data.Migrations
 
                     b.Property<long?>("BytesDownloaded")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("CategoryName")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(40)
-                        .HasColumnType("TEXT")
-                        .HasDefaultValue("Genel");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("TEXT");

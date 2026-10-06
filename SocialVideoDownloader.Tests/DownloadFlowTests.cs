@@ -30,6 +30,7 @@ public class DownloadFlowTests : IDisposable
         collection.AddSingleton<IDownloaderBinaryManager, FakeBinaries>();
         collection.AddSingleton<WindowsServiceCoordinator>();
         collection.AddScoped<ISettingsService, SettingsService>();
+        collection.AddScoped<ICategoryService, CategoryService>();
         collection.AddScoped<IDownloadJobService, DownloadJobService>();
         _services = collection.BuildServiceProvider();
         using var scope = _services.CreateScope();

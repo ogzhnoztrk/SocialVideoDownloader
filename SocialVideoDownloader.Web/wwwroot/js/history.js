@@ -15,7 +15,7 @@ async function loadHistory() {
     jobs.forEach((job) => {
         const row = document.createElement("tr");
         row.append(
-            el("td", null, job.platformName),
+            el("td", null, [job.platformName, job.categoryName, sourceLabel(job.source)].filter(Boolean).join(" · ")),
             cellWith(el("strong", null, job.title), job.fileName ? el("div", "hint", job.fileName) : null),
             el("td", null, formatDate(job.createdAt)),
             statusCell(job),

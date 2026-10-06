@@ -17,4 +17,6 @@ public sealed class AppStatusDto
     public bool YtDlpAvailable { get; set; }
 
     public bool FfmpegAvailable { get; set; }
+
+    public GistStatusDto Gist { get; set; } = new();
 }

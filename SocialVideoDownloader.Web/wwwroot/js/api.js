@@ -48,6 +48,12 @@ function formatDate(value) {
     return new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
 }
 
+function sourceLabel(source) {
+    if (source === "gist") return "Gist";
+    if (source === "file") return "Dosya";
+    return "";
+}
+
 const statusLabels = {
     pending: "Bekliyor",
     downloading: "İndiriliyor...",

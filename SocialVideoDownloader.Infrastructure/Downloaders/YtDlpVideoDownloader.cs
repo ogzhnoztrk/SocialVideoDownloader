@@ -98,6 +98,7 @@ public sealed class YtDlpVideoDownloader(
         if (string.IsNullOrWhiteSpace(outputPath) || !File.Exists(outputPath))
             throw new DownloadException(UserMessages.VideoNotFound, "yt-dlp finished without an output file.");
 
+        outputPath = await Mp4Finalizer.EnsureAsync(outputPath, ffmpegDirectory, logger, cancellationToken);
         return new DownloadResult { FilePath = outputPath };
     }
 

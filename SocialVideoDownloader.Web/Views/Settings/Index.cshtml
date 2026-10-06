@@ -37,6 +37,18 @@
     </section>
 
     <section class="panel">
+        <h2>Uzaktan İndirme</h2>
+        <label for="gist-url">GitHub Gist URL</label>
+        <input id="gist-url" placeholder="https://gist.github.com/kullanici/xxxxxxxx" />
+        <label class="check"><input id="gist-enabled" type="checkbox" /> Gist kontrolünü aktif et</label>
+        <p class="hint">Kontrol sıklığı: 60 dakika</p>
+        <div class="action-row">
+            <button id="gist-check" class="btn btn-ghost" type="button">Şimdi Kontrol Et</button>
+        </div>
+        <p class="hint">Public bir gist yeter. Bilgisayar dışarıya açılmaz; program yalnızca gist dosyasını okur. Adresi kaydettikten sonra kontrol başlar.</p>
+    </section>
+
+    <section class="panel">
         <h2>Windows</h2>
         <label class="check"><input id="start-with-windows" type="checkbox" /> Windows ile başlat</label>
         <p id="service-status" class="hint">Windows Service durumu yükleniyor...</p>
@@ -52,6 +64,16 @@
         <button class="btn btn-accent" type="submit">Kaydet</button>
     </div>
 </form>
+
+<section class="panel">
+    <h2>Kategoriler</h2>
+    <p class="hint">Örnek: turkce_meme\Instagram, turkce_meme\TikTok, turkce_meme\Twitter. Gist ve diğer toplu indirmeler varsayılan kategoriye gider.</p>
+    <div class="inline-field">
+        <input id="category-name" placeholder="turkce_meme" />
+        <button id="add-category" class="btn btn-accent" type="button">Ekle</button>
+    </div>
+    <div id="category-list"></div>
+</section>
 
 @section Scripts {
     <script src="~/js/settings.js" asp-append-version="true"></script>

@@ -15,6 +15,7 @@ namespace SocialVideoDownloader.Infrastructure.Services;
 public sealed class DownloadJobService(
     IDbContextFactory<AppDbContext> dbFactory,
     ISettingsService settingsService,
+    ICategoryService categories,
     IVideoDownloader downloader,
     IDownloaderBinaryManager binaries,
     VideoInfoCache cache,
@@ -31,8 +32,13 @@ public sealed class DownloadJobService(
         return info;
     }
 
-    public async Task<CreateDownloadResponse> CreateAsync(string url, CancellationToken cancellationToken)
+    public async Task<CreateDownloadResponse> CreateAsync(
+        string url,
+        CancellationToken cancellationToken,
+        DownloadSource source = DownloadSource.Manual,
+        int? categoryId = null)
     {
+        var category = await categories.ResolveFolderAsync(categoryId, cancellationToken);
         var info = await GetVideoInfoAsync(url, cancellationToken);
         var settings = await settingsService.GetEntityAsync(cancellationToken);
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -57,11 +63,14 @@ public sealed class DownloadJobService(
             }
         }
 
-        var template = OutputPathBuilder.BuildTemplate(settings, info.Platform, DateTimeOffset.Now);
+        var template = OutputPathBuilder.BuildTemplate(settings, info.Platform, DateTimeOffset.Now, category);
         var job = new DownloadJob
         {
             Id = Guid.NewGuid(),
             Url = info.Url,
+            NormalizedUrl = UrlGuard.TryCanonical(info.Url, out var canonical) ? canonical : null,
+            Source = source,
+            CategoryName = category,
             Platform = info.Platform,
             Title = Limit(info.Title, 500),
             Uploader = Limit(info.Uploader, 300),
@@ -336,6 +345,8 @@ public sealed class DownloadJobService(
     {
         Id = job.Id,
         Url = job.Url,
+        Source = job.Source,
+        CategoryName = string.IsNullOrWhiteSpace(job.CategoryName) ? "Genel" : job.CategoryName,
         Platform = job.Platform,
         PlatformName = PlatformResolver.GetDisplayName(job.Platform),
         Title = job.Title,

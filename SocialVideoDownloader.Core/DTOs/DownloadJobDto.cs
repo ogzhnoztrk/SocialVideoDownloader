@@ -8,6 +8,10 @@ public sealed class DownloadJobDto
 
     public string Url { get; set; } = string.Empty;
 
+    public DownloadSource Source { get; set; }
+
+    public string CategoryName { get; set; } = "Genel";
+
     public Platform Platform { get; set; }
 
     public string PlatformName { get; set; } = string.Empty;

@@ -6,7 +6,15 @@ public sealed class DownloadJob
 
     public string Url { get; set; } = string.Empty;
 
+    public string? NormalizedUrl { get; set; }
+
+    public Enums.DownloadSource Source { get; set; } = Enums.DownloadSource.Manual;
+
+    public int RetryCount { get; set; }
+
     public Enums.Platform Platform { get; set; }
+
+    public string CategoryName { get; set; } = "Genel";
 
     public string Title { get; set; } = string.Empty;
 

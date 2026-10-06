@@ -10,4 +10,6 @@ public static class AppConstants
     public const string ApiHeaderName = "X-SVD-Request";
     public const string ApiHeaderValue = "1";
     public const long MinimumFreeBytes = 100L * 1024 * 1024;
+    public const int DefaultGistPollMinutes = 60;
+    public const int MaxGistRetryCount = 3;
 }

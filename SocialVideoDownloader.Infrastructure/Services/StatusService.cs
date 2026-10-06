@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SocialVideoDownloader.Core.DTOs;
 using SocialVideoDownloader.Core.Enums;
+using SocialVideoDownloader.Core.Gist;
 using SocialVideoDownloader.Core.Interfaces;
 using SocialVideoDownloader.Infrastructure.Configuration;
 using SocialVideoDownloader.Infrastructure.Data;
@@ -31,6 +32,7 @@ public sealed class StatusService(
             StartWithWindows = settings.StartWithWindows,
             YtDlpAvailable = binaries.ResolveYtDlpPath(settings) is not null,
             FfmpegAvailable = binaries.ResolveFfmpegDirectory(settings) is not null,
+            Gist = GistStatusMapper.From(settings),
         };
     }
 }

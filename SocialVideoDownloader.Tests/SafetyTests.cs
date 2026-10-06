@@ -1,7 +1,10 @@
+using System.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
 using SocialVideoDownloader.Core.Constants;
 using SocialVideoDownloader.Core.Files;
 using SocialVideoDownloader.Core.Platforms;
 using SocialVideoDownloader.Core.Validation;
+using SocialVideoDownloader.Infrastructure.Configuration;
 using SocialVideoDownloader.Infrastructure.Downloaders;
 using SocialVideoDownloader.Infrastructure.Services;
 
@@ -95,6 +98,79 @@ public class SafetyTests
         Assert.Equal(url, arguments[^1]);
         Assert.Contains("-f", arguments);
         Assert.Contains("b", arguments);
+    }
+
+    [Fact]
+    public void Download_arguments_merge_into_mp4_when_ffmpeg_is_available()
+    {
+        var arguments = YtDlpArgumentBuilder.BuildDownloadArguments(
+            new Core.DTOs.DownloadRequest
+            {
+                Url = "https://www.instagram.com/reel/abc/",
+                OutputTemplate = Path.Combine(Path.GetTempPath(), AppConstants.DefaultFileNameTemplate),
+                Platform = Core.Enums.Platform.Instagram,
+            },
+            ffmpegDirectory: Path.GetTempPath(),
+            cookieFile: null);
+
+        var merge = arguments.ToList().IndexOf("--merge-output-format");
+        Assert.True(merge >= 0);
+        Assert.Equal("mp4", arguments[merge + 1]);
+    }
+
+    [Fact]
+    public async Task An_mp4_file_is_left_unchanged()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".mp4");
+        await File.WriteAllBytesAsync(path, [1, 2, 3, 4]);
+        try
+        {
+            var result = await Mp4Finalizer.EnsureAsync(path, null, NullLogger.Instance, CancellationToken.None);
+            Assert.Equal(path, result);
+            Assert.True(File.Exists(path));
+        }
+        finally
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task A_non_mp4_download_is_saved_as_mp4()
+    {
+        if (!File.Exists(DataPaths.FfmpegPath))
+            return;
+
+        var directory = Path.Combine(Path.GetTempPath(), "svd-mp4-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var source = Path.Combine(directory, "clip.mkv");
+        try
+        {
+            var start = new ProcessStartInfo
+            {
+                FileName = DataPaths.FfmpegPath,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+            };
+            foreach (var argument in new[] { "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=16x16:d=0.2", "-c:v", "libx264", source })
+                start.ArgumentList.Add(argument);
+
+            using var process = Process.Start(start);
+            await process!.WaitForExitAsync();
+            Assert.Equal(0, process.ExitCode);
+
+            var result = await Mp4Finalizer.EnsureAsync(source, DataPaths.FfmpegDirectory, NullLogger.Instance, CancellationToken.None);
+            Assert.EndsWith(".mp4", result, StringComparison.OrdinalIgnoreCase);
+            Assert.True(new FileInfo(result).Length > 0);
+            Assert.False(File.Exists(source));
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
     }
 
     [Theory]

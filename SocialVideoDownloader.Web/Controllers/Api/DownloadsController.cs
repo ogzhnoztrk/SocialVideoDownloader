@@ -1,4 +1,6 @@
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using SocialVideoDownloader.Core.Enums;
 using SocialVideoDownloader.Core.Exceptions;
 using SocialVideoDownloader.Core.Interfaces;
 using SocialVideoDownloader.Web.Models;
@@ -7,7 +9,7 @@ namespace SocialVideoDownloader.Web.Controllers.Api;
 
 [ApiController]
 [Route("api/downloads")]
-public sealed class DownloadsController(IDownloadJobService jobs) : ControllerBase
+public sealed class DownloadsController(IDownloadJobService jobs, IUrlListImportService lists) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken cancellationToken = default) =>
@@ -29,8 +31,44 @@ public sealed class DownloadsController(IDownloadJobService jobs) : ControllerBa
     {
         try
         {
-            var created = await jobs.CreateAsync(request.Url ?? string.Empty, cancellationToken);
+            var created = await jobs.CreateAsync(
+                request.Url ?? string.Empty,
+                cancellationToken,
+                DownloadSource.Manual,
+                request.CategoryId);
             return Created($"/api/downloads/{created.Job.Id}", created);
+        }
+        catch (DownloadException exception)
+        {
+            return ApiResults.FromException(exception);
+        }
+    }
+
+    [HttpPost("import")]
+    [RequestSizeLimit(300_000)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 300_000)]
+    public async Task<IActionResult> Import(IFormFile? file, [FromForm] int? categoryId, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { message = "TXT dosyası seçin." });
+
+        if (file.Length > 200_000 || !string.Equals(Path.GetExtension(file.FileName), ".txt", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Yalnızca 200 KB altındaki .txt dosyası yüklenebilir." });
+
+        string content;
+        await using (var stream = file.OpenReadStream())
+        using (var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            content = await reader.ReadToEndAsync(cancellationToken);
+
+        if (content.Contains('\0'))
+            return BadRequest(new { message = "Dosya metin değil." });
+
+        try
+        {
+            var result = await lists.ImportAsync(content, categoryId, DownloadSource.File, "[Dosya]", cancellationToken);
+            if (result.Found == 0)
+                result.Message = result.Invalid == 0 ? "Dosyada video adresi yok." : "Dosyada geçerli video adresi yok.";
+            return Ok(result);
         }
         catch (DownloadException exception)
         {

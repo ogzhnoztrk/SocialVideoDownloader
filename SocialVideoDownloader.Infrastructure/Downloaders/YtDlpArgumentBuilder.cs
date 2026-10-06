@@ -49,7 +49,7 @@ public static class YtDlpArgumentBuilder
             arguments.Add("-f");
             arguments.Add("bv*+ba/b");
             arguments.Add("--merge-output-format");
-            arguments.Add("mp4/mkv");
+            arguments.Add("mp4");
             arguments.Add("--ffmpeg-location");
             arguments.Add(ffmpegDirectory);
         }

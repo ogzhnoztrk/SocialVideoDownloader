@@ -2,11 +2,19 @@
 
 <section class="panel">
     <div class="section-label">Video URL</div>
+    <label for="download-category">Kategori</label>
+    <select id="download-category" class="category-select"></select>
+    <p class="hint">Video, seçilen kategorinin içinde platform klasörüne iner: Instagram, TikTok veya Twitter.</p>
     <label class="visually-hidden" for="video-url">Video URL</label>
     <input id="video-url" class="url-input" type="url" placeholder="https://www.instagram.com/reel/..." autocomplete="off" />
     <div class="action-row">
         <button id="info-button" class="btn btn-accent" type="button">Video Bilgisini Getir</button>
     </div>
+    <div class="folder-row">
+        <input id="url-file" class="url-file" type="file" accept=".txt,text/plain" />
+        <button id="import-file" class="btn btn-ghost" type="button">TXT'den İndir</button>
+    </div>
+    <p class="hint">Her satır bir video adresidir. Boş satırlar ve # ile başlayan satırlar atlanır. Liste, yukarıda seçili kategoriye iner.</p>
 </section>
 
 <section id="info-panel" class="panel d-none">
@@ -31,6 +39,11 @@
             <button id="download-button" class="btn btn-accent" type="button">İndir</button>
         </div>
     </div>
+</section>
+
+<section class="panel">
+    <h2>Uzaktan İndirme</h2>
+    <div id="gist-status" class="hint">Durum yükleniyor...</div>
 </section>
 
 <section class="stats" id="stats"></section>

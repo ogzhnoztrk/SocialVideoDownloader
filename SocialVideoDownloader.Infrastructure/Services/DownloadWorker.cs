@@ -59,7 +59,7 @@ public sealed class DownloadWorker(
         try
         {
             var settings = await settingsService.GetEntityAsync(jobToken);
-            var template = OutputPathBuilder.BuildTemplate(settings, job.Platform, DateTimeOffset.Now);
+            var template = OutputPathBuilder.BuildTemplate(settings, job.Platform, DateTimeOffset.Now, job.CategoryName);
             var directory = Path.GetDirectoryName(template) ?? settings.DownloadDirectory;
             Directory.CreateDirectory(directory);
             EnsureDiskSpace(directory);

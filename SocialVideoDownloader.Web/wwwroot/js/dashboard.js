@@ -1,12 +1,19 @@
 const urlInput = document.querySelector("#video-url");
 const infoPanel = document.querySelector("#info-panel");
+const categorySelect = document.querySelector("#download-category");
 let currentInfo = null;
+let categories = [];
 
 document.querySelector("#info-button").addEventListener("click", loadInfo);
+document.querySelector("#import-file").addEventListener("click", importFile);
 document.querySelector("#download-button").addEventListener("click", startDownload);
 document.querySelector("#change-folder").addEventListener("click", changeFolder);
 urlInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") loadInfo();
+});
+categorySelect.addEventListener("change", () => {
+    localStorage.setItem("svd-category", categorySelect.value);
+    if (currentInfo) text("#info-folder", previewFolder(currentInfo.downloadDirectory, currentInfo.platformName));
 });
 
 async function loadInfo() {
@@ -29,7 +36,7 @@ function renderInfo(info) {
     text("#info-duration", formatDuration(info.durationSeconds));
     text("#info-resolution", info.resolution || "Bilinmiyor");
     text("#info-format", info.format || "MP4");
-    text("#info-folder", info.downloadDirectory);
+    text("#info-folder", previewFolder(info.downloadDirectory, info.platformName));
     const thumb = document.querySelector("#info-thumb");
     if (info.thumbnailUrl) {
         thumb.src = info.thumbnailUrl;
@@ -39,11 +46,49 @@ function renderInfo(info) {
     }
 }
 
+async function importFile() {
+    const input = document.querySelector("#url-file");
+    const file = input.files && input.files[0];
+    if (!file) {
+        notifyError(new Error("TXT dosyası seçin."));
+        return;
+    }
+
+    const body = new FormData();
+    body.append("file", file);
+    if (categorySelect.value) body.append("categoryId", categorySelect.value);
+    Swal.fire({ title: "Liste kuyruğa alınıyor", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    try {
+        const response = await fetch("/api/downloads/import", {
+            method: "POST",
+            headers: { "X-SVD-Request": "1" },
+            body,
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || "İşlem başarısız.");
+        Swal.close();
+        input.value = "";
+        await Swal.fire({
+            icon: data.added > 0 ? "success" : "info",
+            title: data.added > 0 ? "Liste kuyruğa alındı" : "Yeni video yok",
+            text: data.message || "",
+            confirmButtonText: "Tamam",
+        });
+        await refresh();
+    } catch (error) {
+        Swal.close();
+        notifyError(error);
+    }
+}
+
 async function startDownload() {
     try {
         const created = await api("/api/downloads", {
             method: "POST",
-            body: JSON.stringify({ url: urlInput.value.trim() }),
+            body: JSON.stringify({
+                url: urlInput.value.trim(),
+                categoryId: Number(categorySelect.value) || null,
+            }),
         });
         if (created.alreadyExists) {
             await Swal.fire({ icon: "info", title: "Bu video daha önce indirilmiş.", confirmButtonText: "Tamam" });
@@ -60,7 +105,7 @@ async function changeFolder() {
     if (!folder) return;
     settings.downloadDirectory = folder;
     const saved = await api("/api/settings", { method: "PUT", body: JSON.stringify(settings) });
-    text("#info-folder", saved.settings.downloadDirectory);
+    text("#info-folder", previewFolder(saved.settings.downloadDirectory, currentInfo?.platformName));
 }
 
 async function refresh() {
@@ -71,6 +116,7 @@ async function refresh() {
     ]);
     renderStats(stats);
     renderRecent(recent);
+    renderGist(status.gist, categories.find((item) => item.isDefault));
     const banner = document.querySelector("#tool-banner");
     if (!status.ytDlpAvailable) {
         banner.classList.remove("d-none");
@@ -105,7 +151,10 @@ function renderRecent(jobs) {
 
     jobs.forEach((job) => {
         const card = el("article", "download-card");
-        card.append(el("div", "section-label", job.platformName), el("strong", null, job.title));
+        const label = [job.platformName, job.categoryName, sourceLabel(job.source)]
+            .filter(Boolean)
+            .join(" · ");
+        card.append(el("div", "section-label", label), el("strong", null, job.title));
         if (job.fileName) card.append(el("div", null, job.fileName));
         if (job.status === "downloading" || job.status === "pending") {
             const bar = el("div", "progress");
@@ -133,9 +182,66 @@ function renderRecent(jobs) {
     });
 }
 
+function previewFolder(root, platformName) {
+    const platform = platformFolder(platformName);
+    const category = selectedCategoryName();
+    if (!root) return category;
+    return platform ? `${root}\\${category}\\${platform}` : `${root}\\${category}`;
+}
+
+function platformFolder(name) {
+    if (name === "Instagram") return "Instagram";
+    if (name === "TikTok") return "TikTok";
+    if (name === "Twitter" || name === "X") return "Twitter";
+    if (!name) return "";
+    return "Other";
+}
+
+function selectedCategoryName() {
+    const selected = categories.find((item) => String(item.id) === categorySelect.value);
+    return selected?.name || "Genel";
+}
+
+async function loadCategories() {
+    categories = await api("/api/categories");
+    const saved = categorySelect.value || localStorage.getItem("svd-category");
+    categorySelect.replaceChildren();
+    categories.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = String(item.id);
+        option.textContent = item.isDefault ? `${item.name} (varsayılan)` : item.name;
+        categorySelect.append(option);
+    });
+    const preferred = categories.find((item) => String(item.id) === saved)
+        || categories.find((item) => item.isDefault)
+        || categories[0];
+    if (preferred) categorySelect.value = String(preferred.id);
+}
+
+function renderGist(gist, defaultCategory) {
+    const root = document.querySelector("#gist-status");
+    if (!gist) {
+        root.textContent = "Durum: Kapalı";
+        return;
+    }
+
+    const lines = [`Durum: ${gist.status || "Kapalı"}`];
+    lines.push(`Son kontrol: ${gist.lastCheckedAt ? formatDate(gist.lastCheckedAt) : "henüz yok"}`);
+    if (gist.enabled && gist.nextCheckAt)
+        lines.push(`Sonraki kontrol: ${formatDate(gist.nextCheckAt)}`);
+    if (gist.status === "Hata")
+        lines.push(`Hata: ${gist.message || "Gist dosyasına erişilemedi"}`);
+    else if (gist.message)
+        lines.push(`Son kontrol sonucu: ${gist.message}`);
+    if (defaultCategory)
+        lines.push(`Varsayılan kategori: ${defaultCategory.name}`);
+    root.style.whiteSpace = "pre-line";
+    root.textContent = lines.join("\n");
+}
+
 function text(selector, value) {
     document.querySelector(selector).textContent = value || "";
 }
 
-refresh();
+loadCategories().then(refresh).catch(notifyError);
 setInterval(refresh, 2000);
